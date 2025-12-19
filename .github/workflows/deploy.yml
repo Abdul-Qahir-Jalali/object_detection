@@ -1,0 +1,37 @@
+name: Sync Backend to Hugging Face Hub
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+      
+      - name: Push to Hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # CHANGE THIS to your Hugging Face Space name (e.g., qahir00/my-app)
+          HF_SPACE_ID: qahir00/yolo11-app 
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          
+          # Clone the HF Space
+          git clone https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_ID SPACE_REPO
+          
+          # Copy backend files to root of Space
+          # (We ignore errors if files don't exist in source to avoid failing on empty updates, but mainly we want to overwrite)
+          cp -r backend/* SPACE_REPO/
+          
+          cd SPACE_REPO
+          git add .
+          git commit -m "Sync backend from GitHub: ${{ github.sha }}" || echo "No changes to commit"
+          git push https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_ID main

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLO11 Object Detection | Professional Pipeline</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>DeepDetect</span>
+            </div>
+            
+            <div class="settings-panel">
+                <h3><i class="fa-solid fa-sliders"></i> Configuration</h3>
+                
+                <div class="input-group">
+                    <label for="apiUrl">API Endpoint URL</label>
+                    <input type="text" id="apiUrl" placeholder="https://huggingface.co/spaces/..." value="http://localhost:8000/predict">
+                    <small>Enter your deployed Space URL here</small>
+                </div>
+
+                <div class="status-panel">
+                    <div class="status-item">
+                        <span class="label">Backend Status</span>
+                        <span class="value" id="statusValue"><i class="fa-solid fa-circle-question"></i> Unknown</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-panel">
+                <h3>About</h3>
+                <p>This professional pipeline utilizes YOLO11 for state-of-the-art object detection.</p>
+                <div class="tags">
+                    <span class="tag">YOLO11</span>
+                    <span class="tag">FastAPI</span>
+                    <span class="tag">W&B</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header>
+                <h1>Object Detection Studio</h1>
+                <p>Upload an image to detect objects like chairs, boxes, documents, etc.</p>
+            </header>
+
+            <div class="workspace">
+                <!-- Dropzone -->
+                <div class="upload-area" id="dropzone">
+                    <input type="file" id="fileInput" accept="image/*" hidden>
+                    <div class="upload-content">
+                        <i class="fa-solid fa-cloud-arrow-up icon"></i>
+                        <h3>Drag & Drop or Click to Upload</h3>
+                        <p>Support for JPG, PNG, WEBP</p>
+                    </div>
+                </div>
+
+                <!-- Results View -->
+                <div class="results-area hidden" id="resultsArea">
+                    <div class="canvas-wrapper">
+                        <img id="sourceImage" src="" alt="Source">
+                        <canvas id="detectionCanvas"></canvas>
+                        <div class="loader-overlay hidden" id="loader">
+                            <div class="spinner"></div>
+                            <p>Processing...</p>
+                        </div>
+                    </div>
+                    
+                    <div class="metrics-panel">
+                        <div class="metric-card">
+                            <span class="metric-value" id="detectionCount">0</span>
+                            <span class="metric-label">Detections</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-value" id="avgConf">0%</span>
+                            <span class="metric-label">Avg Confidence</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-reset" id="resetBtn">
+                        <i class="fa-solid fa-rotate-right"></i> Analyze Another
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
