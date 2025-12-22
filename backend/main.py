@@ -120,13 +120,13 @@ async def predict(file: UploadFile = File(...), background_tasks: BackgroundTask
 
     for box in result.boxes:
         # For API Response
-        x1, y1, x2, y2 = box.xyxy[0].tolist()
+        x1, y1, x2, y2 = box.xyxyn[0].tolist()
         conf = float(box.conf[0])
         cls = int(box.cls[0])
         label = model.names[cls]
         
         detections.append({
-            "bbox": [x1, y1, x2, y2],
+            "box": [x1, y1, x2, y2],
             "confidence": conf,
             "class": label,
             "class_id": cls
