@@ -448,46 +448,87 @@ header p {
     transform: translateX(-50%) translateY(-5px);
 }
 
-/* Fix: Align first tooltip to left to avoid sidebar clipping */
-.step:first-child::after {
-    left: 0;
-    transform: translateX(0) translateY(0px);
+
+/* Explicit Tooltip Positioning Classes */
+/* Align Left (Expands Right) - For first items */
+.tooltip-left::after {
+    left: 0 !important;
+    right: auto !important;
+    transform: translateX(0) translateY(0px) !important;
     text-align: left;
 }
 
-.step:first-child::before {
-    left: 20px;
-    transform: translateX(0) translateY(5px);
+.tooltip-left::before {
+    left: 25px !important;
+    right: auto !important;
+    transform: translateX(0) translateY(5px) !important;
 }
 
-.step:first-child:hover::after {
-    transform: translateX(0) translateY(-5px);
+/* Align Right (Expands Left) - For last items */
+.tooltip-right::after {
+    left: auto !important;
+    right: 0 !important;
+    transform: translateX(0) translateY(0px) !important;
+    text-align: left;
+    /* Keep text readable */
 }
 
-.step:first-child:hover::before {
-    transform: translateX(0) translateY(-5px);
+.tooltip-right::before {
+    left: auto !important;
+    right: 35px !important;
+    /* Align with icon center */
+    transform: translateX(0) translateY(5px) !important;
 }
 
-/* Fix: Align last tooltip to right to avoid window clipping */
-.step:last-child::after {
-    left: auto;
-    right: 0;
-    transform: translateX(0) translateY(0px);
-    text-align: right;
+/* Hover States for explicitly class-ed tooltips */
+.tooltip-left:hover::after,
+.tooltip-left:hover::before,
+.tooltip-right:hover::after,
+.tooltip-right:hover::before {
+    transform: translateY(-5px) !important;
 }
 
-.step:last-child::before {
-    left: auto;
-    right: 20px;
-    transform: translateX(0) translateY(5px);
+/* Analyze Button */
+.btn-analyze {
+    margin-top: 1.5rem;
+    background-color: var(--secondary);
+    color: var(--text-main);
+    border: none;
+    padding: 1rem 3rem;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s;
+    box-shadow: 0 4px 14px 0 rgba(193, 217, 41, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    animation: bounceIn 0.5s;
 }
 
-.step:last-child:hover::after {
-    transform: translateX(0) translateY(-5px);
+.btn-analyze:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 6px 20px rgba(193, 217, 41, 0.3);
+    background-color: #d4e845;
 }
 
-.step:last-child:hover::before {
-    transform: translateX(0) translateY(-5px);
+@keyframes bounceIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    70% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
 }
 
 .step-icon {

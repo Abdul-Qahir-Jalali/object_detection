@@ -69,6 +69,16 @@
                     </div>
                 </div>
 
+                <!-- Manual Trigger Button -->
+                <button id="analyzeBtn" class="btn-analyze hidden">
+                    <i class="fa-solid fa-bolt"></i> Analyze Image
+                </button>
+
+                <!-- Manual Trigger Button -->
+                <button id="analyzeBtn" class="btn-analyze hidden">
+                    <i class="fa-solid fa-bolt"></i> Analyze Image
+                </button>
+
                 <!-- Results View -->
                 <div class="results-area hidden" id="resultsArea">
                     <div class="canvas-wrapper">
@@ -105,7 +115,7 @@
                 <div class="visualization-group">
                     <h2><i class="fa-solid fa-bolt"></i> Application Workflow (Runtime)</h2>
                     <div class="pipeline-flow">
-                        <div class="step"
+                        <div class="step tooltip-left"
                             data-tooltip="The user selects an image. The frontend uses HTML5 Drag & Drop API to capture the file.">
                             <div class="step-icon"><i class="fa-solid fa-upload"></i></div>
                             <p>Upload</p>
@@ -141,7 +151,7 @@
                             <div class="dot"></div>
                         </div>
 
-                        <div class="step"
+                        <div class="step tooltip-right"
                             data-tooltip="The browser receives JSON data and uses the Canvas API to draw colorful bounding boxes and labels over the original image.">
                             <div class="step-icon"><i class="fa-solid fa-pen-nib"></i></div>
                             <p>Draw Results</p>
@@ -155,7 +165,7 @@
                 <div class="visualization-group">
                     <h2><i class="fa-solid fa-gears"></i> Development & MLOps Pipeline</h2>
                     <div class="pipeline-flow">
-                        <div class="step"
+                        <div class="step tooltip-left"
                             data-tooltip="Code changes are pushed to GitHub. This acts as the single source of truth for the project versioning.">
                             <div class="step-icon"><i class="fa-brands fa-github"></i></div>
                             <p>GitHub</p>
@@ -191,7 +201,7 @@
                             <div class="dot"></div>
                         </div>
 
-                        <div class="step"
+                        <div class="step tooltip-right"
                             data-tooltip="Inference data is logged to Weights & Biases (W&B) for monitoring, and raw images are saved to HF Datasets for future training.">
                             <div class="step-icon"><i class="fa-solid fa-chart-line"></i></div>
                             <p>MLOps Logging</p>
