@@ -172,6 +172,11 @@ function drawDetections(data) {
     const imgWidth = canvas.width;
     const imgHeight = canvas.height;
 
+    // Dynamic Scale Factor:
+    // Scale elements relative to a reference width (e.g., 1000px).
+    // This ensures labels are readable even on 4K+ images when downscaled by CSS.
+    const scale = Math.max(1, imgWidth / 1000);
+
     // Update Metrics
     document.getElementById('detectionCount').textContent = detections.length;
     const avgConf = detections.length ? (detections.reduce((acc, d) => acc + d.confidence, 0) / detections.length * 100).toFixed(1) : 0;
@@ -188,21 +193,34 @@ function drawDetections(data) {
         // Random Color for Class
         const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
 
+        // Scaled Styles
+        const lineWidth = 4 * scale;
+        const fontSize = Math.round(16 * scale);
+        const padding = 6 * scale;
+
         // Draw Box
         ctx.strokeStyle = color;
-        ctx.lineWidth = 4;
+        ctx.lineWidth = lineWidth;
         ctx.strokeRect(boxX, boxY, boxW, boxH);
 
         // Draw Label Background
         ctx.fillStyle = color;
         const text = `${det.class} ${Math.round(det.confidence * 100)}%`;
-        const textWidth = ctx.measureText(text).width + 10;
-        const textHeight = 24;
-        ctx.fillRect(boxX, boxY - textHeight, textWidth, textHeight);
+        ctx.font = `bold ${fontSize}px "Inter", sans-serif`; // Set font before measuring
+        const textMetrics = ctx.measureText(text);
+        const textWidth = textMetrics.width + (padding * 2);
+        const textHeight = fontSize + (padding * 2);
+
+        // Ensure label stays within image bounds (optional logic could go here)
+        // Draw background above box (or inside if at top edge)
+        let labelY = boxY - textHeight;
+        if (labelY < 0) labelY = boxY; // Flip inside if too high
+
+        ctx.fillRect(boxX, labelY, textWidth, textHeight);
 
         // Draw Text
         ctx.fillStyle = '#fff';
-        ctx.font = 'bold 14px "Inter", sans-serif';
-        ctx.fillText(text, boxX + 5, boxY - 7);
+        ctx.textBaseline = 'top';
+        ctx.fillText(text, boxX + padding, labelY + padding);
     });
 }
