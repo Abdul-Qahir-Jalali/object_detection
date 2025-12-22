@@ -113,6 +113,9 @@ def save_to_data_lake(image_bytes: bytes, filename: str, detections: list):
 async def startup_event():
     load_model()
     # Init generic W&B run if needed, or do it per request
+    token = os.getenv("HF_TOKEN")
+    print(f"Startup: HF_TOKEN is {'Present' if token else 'MISSING'}")
+    
     if os.getenv("WANDB_API_KEY"):
         wandb.login(key=os.getenv("WANDB_API_KEY"))
 
