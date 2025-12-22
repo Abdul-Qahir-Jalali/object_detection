@@ -43,6 +43,7 @@ body {
     flex-direction: column;
     gap: 2.5rem;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.02);
+    overflow-y: auto;
 }
 
 .logo {
