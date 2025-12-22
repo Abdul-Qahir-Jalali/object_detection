@@ -98,7 +98,7 @@ async def startup_event():
 def health_check():
     return {"status": "running", "model": HP_REPO_ID}
 
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
@@ -152,3 +152,5 @@ async def predict(file: UploadFile = File(...), background_tasks: BackgroundTask
         "detections": detections,
         "count": len(detections)
     }
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
