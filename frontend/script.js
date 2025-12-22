@@ -226,3 +226,140 @@ function drawDetections(data) {
         ctx.fillText(text, boxX + padding, labelY + padding);
     });
 }
+
+// --- Review Hub Logic ---
+const navDashboard = document.getElementById('nav-dashboard');
+const navReview = document.getElementById('nav-review');
+const dashboardView = document.getElementById('dashboard-view');
+const reviewView = document.getElementById('review-view');
+const reviewImage = document.getElementById('reviewImage');
+const reviewFilename = document.getElementById('reviewFilename');
+const btnVerify = document.getElementById('btnVerify');
+const btnWrong = document.getElementById('btnWrong');
+const correctionPanel = document.getElementById('correctionPanel');
+const btnSubmitCorrection = document.getElementById('btnSubmitCorrection');
+const btnNextImage = document.getElementById('btnNextImage');
+
+let reviewQueue = [];
+let currentReviewIndex = 0;
+
+// Tab Switching
+navDashboard.addEventListener('click', () => {
+    switchTab('dashboard');
+});
+
+navReview.addEventListener('click', () => {
+    switchTab('review');
+    loadReviewData();
+});
+
+function switchTab(tab) {
+    if (tab === 'dashboard') {
+        dashboardView.classList.remove('hidden');
+        reviewView.classList.add('hidden');
+        navDashboard.classList.add('active');
+        navReview.classList.remove('active');
+    } else {
+        dashboardView.classList.add('hidden');
+        reviewView.classList.remove('hidden');
+        navDashboard.classList.remove('active');
+        navReview.classList.add('active');
+    }
+}
+
+// Review Data Loading
+async function loadReviewData() {
+    try {
+        reviewFilename.textContent = "Loading data...";
+        const response = await fetch('/list-unverified?limit=20');
+        const data = await response.json();
+
+        if (data.images && data.images.length > 0) {
+            reviewQueue = data.images;
+            currentReviewIndex = 0;
+            showReviewImage();
+        } else {
+            reviewFilename.textContent = "No images found for review.";
+            reviewImage.src = "";
+            btnVerify.disabled = true;
+            btnWrong.disabled = true;
+        }
+    } catch (error) {
+        console.error("Error loading review data:", error);
+        reviewFilename.textContent = "Error loading data.";
+    }
+}
+
+function showReviewImage() {
+    if (currentReviewIndex >= reviewQueue.length) {
+        reviewFilename.textContent = "All loaded images reviewed!";
+        reviewImage.src = "";
+        btnVerify.disabled = true;
+        btnWrong.disabled = true;
+        return;
+    }
+
+    const path = reviewQueue[currentReviewIndex];
+    reviewFilename.textContent = path.split('/').pop(); // Show just filename
+
+    // Use Proxy Endpoint to fetch secure image
+    reviewImage.src = `/proxy-image?path=${encodeURIComponent(path)}`;
+
+    // Reset UI
+    correctionPanel.classList.add('hidden');
+    btnVerify.disabled = false;
+    btnWrong.disabled = false;
+}
+
+// Actions
+btnVerify.addEventListener('click', async () => {
+    await submitReview('verified');
+});
+
+btnWrong.addEventListener('click', () => {
+    correctionPanel.classList.remove('hidden'); // Show dropdown
+});
+
+btnSubmitCorrection.addEventListener('click', async () => {
+    const label = document.getElementById('correctLabelSelect').value;
+    await submitReview('correction', label);
+});
+
+btnNextImage.addEventListener('click', () => {
+    currentReviewIndex++;
+    showReviewImage();
+});
+
+async function submitReview(decision, label = null) {
+    const path = reviewQueue[currentReviewIndex];
+    const payload = {
+        filename: path,
+        decision: decision,
+        label: label
+    };
+
+    try {
+        btnVerify.disabled = true;
+
+        const response = await fetch('/submit-review', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (result.status === 'success') {
+            // Move to next
+            currentReviewIndex++;
+            showReviewImage();
+        } else {
+            alert('Error saving review: ' + result.message);
+            btnVerify.disabled = false;
+        }
+
+    } catch (error) {
+        console.error("Review Submit Error:", error);
+        alert("Network error submission failed.");
+        btnVerify.disabled = false;
+    }
+}
