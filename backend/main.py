@@ -66,22 +66,45 @@ def log_to_wandb(image, results, confs):
         except Exception as e:
             print(f"W&B Logging failed: {e}")
 
-def save_to_data_lake(image_bytes: bytes, filename: str):
-    """Upload raw image to Hugging Face Dataset for future labeling."""
+def save_to_data_lake(image_bytes: bytes, filename: str, detections: list):
+    """Upload raw image and predictions to Hugging Face Dataset for Label Studio."""
     hf_token = os.getenv("HF_TOKEN")
-    if hf_token and DATASET_REPO_ID:
+    dataset_repo = "qahir00/yolo-data" # Target Dataset
+    
+    if hf_token:
         try:
             api = HfApi()
-            # Upload to 'images/' directory in the dataset repo
-            path_in_repo = f"images/{datetime.datetime.now().strftime('%Y-%m-%d')}/{filename}"
+            date_str = datetime.datetime.now().strftime('%Y-%m-%d')
+            
+            # 1. Upload Image
+            image_path = f"images/{date_str}/{filename}"
             api.upload_file(
                 path_or_fileobj=io.BytesIO(image_bytes),
-                path_in_repo=path_in_repo,
-                repo_id=DATASET_REPO_ID,
+                path_in_repo=image_path,
+                repo_id=dataset_repo,
                 repo_type="dataset",
                 token=hf_token
             )
-            print(f"Uploaded {filename} to {DATASET_REPO_ID}")
+            
+            # 2. Upload Predictions (JSON for Label Studio Pre-annotation)
+            json_filename = filename.replace('.jpg', '.json')
+            json_path = f"predictions/{date_str}/{json_filename}"
+            
+            json_content = json.dumps({
+                "image": image_path,
+                "detections": detections,
+                "timestamp": datetime.datetime.now().isoformat()
+            }, indent=2)
+            
+            api.upload_file(
+                path_or_fileobj=io.BytesIO(json_content.encode('utf-8')),
+                path_in_repo=json_path,
+                repo_id=dataset_repo,
+                repo_type="dataset",
+                token=hf_token
+            )
+            
+            print(f"Logged data to {dataset_repo}")
         except Exception as e:
             print(f"Data Lake Upload failed: {e}")
 
@@ -96,7 +119,7 @@ async def startup_event():
 # --- Endpoints ---
 @app.get("/health")
 def health_check():
-    return {"status": "running", "model": HP_REPO_ID}
+    return {"status": "running"}
 
 
 
@@ -145,7 +168,7 @@ async def predict(file: UploadFile = File(...), background_tasks: BackgroundTask
     unique_filename = f"{uuid.uuid4()}.jpg"
     if background_tasks:
         background_tasks.add_task(log_to_wandb, image, wandb_boxes, confidences)
-        background_tasks.add_task(save_to_data_lake, contents, unique_filename)
+        background_tasks.add_task(save_to_data_lake, contents, unique_filename, detections)
 
     return {
         "filename": file.filename,
