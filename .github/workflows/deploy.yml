@@ -19,7 +19,7 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           # CHANGE THIS to your Hugging Face Space name (e.g., qahir00/my-app)
-          HF_SPACE_ID: qahir00/yolo11-app 
+          HF_SPACE_ID: qahir00/object_detection 
         run: |
           git config --global user.email "action@github.com"
           git config --global user.name "GitHub Action"
