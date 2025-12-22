@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,6 +14,7 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="app-container">
         <!-- Sidebar -->
@@ -21,13 +23,13 @@
                 <i class="fa-solid fa-layer-group"></i>
                 <span>DeepDetect</span>
             </div>
-            
+
             <div class="settings-panel">
                 <h3><i class="fa-solid fa-sliders"></i> Configuration</h3>
-                
+
                 <div class="input-group">
                     <label for="apiUrl">API Endpoint URL</label>
-                    <input type="text" id="apiUrl" placeholder="https://huggingface.co/spaces/..." value="http://localhost:8000/predict">
+                    <input type="text" id="apiUrl" placeholder="https://huggingface.co/spaces/..." value="/predict">
                     <small>Enter your deployed Space URL here</small>
                 </div>
 
@@ -78,7 +80,7 @@
                             <p>Processing...</p>
                         </div>
                     </div>
-                    
+
                     <div class="metrics-panel">
                         <div class="metric-card">
                             <span class="metric-value" id="detectionCount">0</span>
@@ -100,4 +102,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
