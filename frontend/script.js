@@ -55,12 +55,27 @@ function handleFiles(files) {
     if (file.type.startsWith('image/')) {
         selectedFile = file;
 
-        // Show file name
-        fileNameDisplay.querySelector('span').textContent = file.name;
-        fileNameDisplay.classList.remove('hidden');
+        // Create Preview
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const previewImage = document.getElementById('previewImage');
+            const uploadContent = dropzone.querySelector('.upload-content');
+
+            previewImage.src = e.target.result;
+            previewImage.classList.remove('hidden');
+            uploadContent.classList.add('hidden');
+
+            // Adjust dropzone padding for image
+            dropzone.style.padding = '2rem';
+        };
+        reader.readAsDataURL(file);
 
         // Enable Analyze Button
         analyzeBtn.disabled = false;
+
+        // Hide text filename (since we show preview now)
+        fileNameDisplay.classList.add('hidden');
+
     } else {
         alert('Please upload an image file (JPG, PNG, WEBP).');
     }
