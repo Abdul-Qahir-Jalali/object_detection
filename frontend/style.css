@@ -468,6 +468,28 @@ header p {
     transform: translateX(0) translateY(-5px);
 }
 
+/* Fix: Align last tooltip to right to avoid window clipping */
+.step:last-child::after {
+    left: auto;
+    right: 0;
+    transform: translateX(0) translateY(0px);
+    text-align: right;
+}
+
+.step:last-child::before {
+    left: auto;
+    right: 20px;
+    transform: translateX(0) translateY(5px);
+}
+
+.step:last-child:hover::after {
+    transform: translateX(0) translateY(-5px);
+}
+
+.step:last-child:hover::before {
+    transform: translateX(0) translateY(-5px);
+}
+
 .step-icon {
     width: 70px;
     height: 70px;
