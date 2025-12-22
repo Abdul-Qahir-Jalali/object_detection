@@ -93,7 +93,7 @@ async function uploadImage(file) {
         // Prepare Canvas
         canvas.width = sourceImage.naturalWidth;
         canvas.height = sourceImage.naturalHeight;
-        ctx.drawImage(sourceImage, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear for new drawing (overlay mode)
 
         // Resize if too big (Client-side optimization)
         let processedFile = file;
