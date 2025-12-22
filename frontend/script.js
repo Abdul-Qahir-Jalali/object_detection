@@ -6,7 +6,7 @@ const canvas = document.getElementById('detectionCanvas');
 const ctx = canvas.getContext('2d');
 const loader = document.getElementById('loader');
 const resetBtn = document.getElementById('resetBtn');
-const apiUrlInput = document.getElementById('apiUrl');
+
 const statusValue = document.getElementById('statusValue');
 
 // Event Listeners
@@ -104,7 +104,7 @@ async function detectObjects(file) {
     const formData = new FormData();
     formData.append('file', file);
 
-    const apiUrl = apiUrlInput.value.replace(/\/$/, ''); // remove trailing slash
+    const apiUrl = '/predict';
 
     try {
         const response = await fetch(`${apiUrl}`, {
