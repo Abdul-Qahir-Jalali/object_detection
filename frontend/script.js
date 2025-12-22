@@ -194,9 +194,9 @@ function drawDetections(data) {
         const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
 
         // Scaled Styles
-        const lineWidth = 4 * scale;
-        const fontSize = Math.round(16 * scale);
-        const padding = 6 * scale;
+        const lineWidth = 6 * scale; // Thicker lines
+        const fontSize = Math.round(24 * scale); // Larger font for readability
+        const padding = 8 * scale;
 
         // Draw Box
         ctx.strokeStyle = color;
