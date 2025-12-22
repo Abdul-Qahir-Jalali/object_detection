@@ -8,7 +8,7 @@ const resetBtn = document.getElementById('resetBtn');
 const statusValue = document.getElementById('statusValue');
 
 const analyzeBtn = document.getElementById('analyzeBtn');
-const fileNameDisplay = document.getElementById('fileName');
+
 let selectedFile = null;
 
 // Event Listeners
@@ -41,7 +41,7 @@ resetBtn.addEventListener('click', () => {
 
     // Reset UI state
     analyzeBtn.disabled = true;
-    fileNameDisplay.classList.add('hidden');
+
 
     // Reset Preview
     document.getElementById('previewImage').classList.add('hidden');
