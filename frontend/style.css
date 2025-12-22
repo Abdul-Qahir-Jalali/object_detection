@@ -301,7 +301,7 @@ header p {
 }
 
 #sourceImage {
-    display: block;
+    display: none;
     max-width: 100%;
     max-height: 60vh;
 }

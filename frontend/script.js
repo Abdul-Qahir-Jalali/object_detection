@@ -91,13 +91,13 @@ async function uploadImage(file) {
 
     sourceImage.onload = async () => {
         // Prepare Canvas
-        canvas.width = sourceImage.width;
-        canvas.height = sourceImage.height;
+        canvas.width = sourceImage.naturalWidth;
+        canvas.height = sourceImage.naturalHeight;
         ctx.drawImage(sourceImage, 0, 0);
 
         // Resize if too big (Client-side optimization)
         let processedFile = file;
-        if (file.size > 1024 * 1024 || sourceImage.width > 1024) {
+        if (file.size > 1024 * 1024 || sourceImage.naturalWidth > 1024) {
             processedFile = await resizeImage(file, 1024);
         }
 
