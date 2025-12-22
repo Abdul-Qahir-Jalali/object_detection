@@ -128,6 +128,42 @@ async def startup_event():
 def health_check():
     return {"status": "running"}
 
+@app.get("/debug-upload")
+def debug_upload():
+    """Diagnostic endpoint to test HF Dataset upload permissions."""
+    token = os.getenv("HF_TOKEN")
+    if not token:
+        return {"status": "error", "message": "HF_TOKEN env var is MISSING"}
+    
+    try:
+        api = HfApi(token=token)
+        user = api.whoami()
+        username = user['name']
+        
+        # Test Upload
+        repo_id = "qahir00/yolo-data"
+        debug_filename = f"debug_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+        debug_content = f"Debug upload test at {datetime.datetime.now()}\nUser: {username}"
+        
+        api.upload_file(
+            path_or_fileobj=io.BytesIO(debug_content.encode('utf-8')),
+            path_in_repo=f"debug_logs/{debug_filename}",
+            repo_id=repo_id,
+            repo_type="dataset"
+        )
+        return {
+            "status": "success", 
+            "message": f"Successfully uploaded {debug_filename} to {repo_id}",
+            "authenticated_as": username
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "status": "error", 
+            "message": str(e),
+            "traceback": traceback.format_exc()
+        }
+
 
 
 @app.post("/predict")
