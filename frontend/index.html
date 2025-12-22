@@ -28,6 +28,13 @@
                 <h3><i class="fa-solid fa-sliders"></i> Configuration</h3>
 
 
+                <!-- Navigation -->
+                <nav class="main-nav">
+                    <ul>
+                        <li class="active" id="nav-dashboard"><i class="fa-solid fa-house"></i> Dashboard</li>
+                        <li id="nav-review"><i class="fa-solid fa-check-double"></i> Review Hub</li>
+                    </ul>
+                </nav>
 
                 <div class="status-panel">
                     <div class="status-item">
@@ -53,55 +60,114 @@
 
         <!-- Main Content -->
         <main class="main-content">
-            <header>
-                <h1>Object Detection Studio</h1>
-                <p>Upload an image to detect objects like chairs, boxes, documents and house.</p>
-            </header>
 
-            <div class="workspace">
-                <!-- Dropzone -->
-                <div class="upload-area" id="dropzone">
-                    <input type="file" id="fileInput" accept="image/*" hidden>
-                    <div class="upload-content">
-                        <i class="fa-solid fa-cloud-arrow-up icon"></i>
-                        <h3>Drag & Drop or Click to Upload</h3>
-                        <p>Support for JPG, PNG, WEBP</p>
+            <!-- VIEW: DASHBOARD -->
+            <div id="dashboard-view">
+                <header>
+                    <h1>Object Detection Studio</h1>
+                    <p>Upload an image to detect objects like chairs, boxes, documents and house.</p>
+                </header>
+
+                <div class="workspace">
+                    <!-- Dropzone -->
+                    <div class="upload-area" id="dropzone">
+                        <input type="file" id="fileInput" accept="image/*" hidden>
+                        <div class="upload-content">
+                            <i class="fa-solid fa-cloud-arrow-up icon"></i>
+                            <h3>Drag & Drop or Click to Upload</h3>
+                            <p>Support for JPG, PNG, WEBP</p>
+                        </div>
+                        <img id="previewImage" class="preview-image hidden">
                     </div>
-                    <img id="previewImage" class="preview-image hidden">
+
+                    <!-- Analysis Controls -->
+                    <div class="analysis-controls">
+                        <button id="analyzeBtn" class="btn-primary" disabled>
+                            <i class="fa-solid fa-bolt"></i> Analyze Image
+                        </button>
+                    </div>
+
+                    <!-- Results View -->
+                    <div class="results-area hidden" id="resultsArea">
+                        <div class="canvas-wrapper">
+                            <img id="sourceImage" src="" alt="Source">
+                            <canvas id="detectionCanvas"></canvas>
+                            <div class="loader-overlay hidden" id="loader">
+                                <div class="spinner"></div>
+                                <p>Processing...</p>
+                            </div>
+                        </div>
+
+                        <div class="metrics-panel">
+                            <div class="metric-card">
+                                <span class="metric-value" id="detectionCount">0</span>
+                                <span class="metric-label">Detections</span>
+                            </div>
+                            <div class="metric-card">
+                                <span class="metric-value" id="avgConf">0%</span>
+                                <span class="metric-label">Avg Confidence</span>
+                            </div>
+                        </div>
+
+                        <button class="btn-reset" id="resetBtn">
+                            <i class="fa-solid fa-rotate-right"></i> Analyze Another
+                        </button>
+                    </div>
                 </div>
+            </div>
 
-                <!-- Analysis Controls -->
-                <div class="analysis-controls">
-                    <button id="analyzeBtn" class="btn-primary" disabled>
-                        <i class="fa-solid fa-bolt"></i> Analyze Image
-                    </button>
-                </div>
+            <!-- VIEW: REVIEW HUB -->
+            <div id="review-view" class="hidden">
+                <header>
+                    <h1>Data Review Hub</h1>
+                    <p>Verify network predictions to improve the dataset quality.</p>
+                </header>
 
-                <!-- Results View -->
-                <div class="results-area hidden" id="resultsArea">
-                    <div class="canvas-wrapper">
-                        <img id="sourceImage" src="" alt="Source">
-                        <canvas id="detectionCanvas"></canvas>
-                        <div class="loader-overlay hidden" id="loader">
-                            <div class="spinner"></div>
-                            <p>Processing...</p>
+                <div class="workspace review-workspace">
+                    <!-- Review Image Container -->
+                    <div class="review-image-area">
+                        <div class="canvas-wrapper">
+                            <img id="reviewImage" src="" alt="Review Data">
+                            <div id="reviewLoader" class="loader-overlay hidden">
+                                <div class="spinner"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="metrics-panel">
-                        <div class="metric-card">
-                            <span class="metric-value" id="detectionCount">0</span>
-                            <span class="metric-label">Detections</span>
-                        </div>
-                        <div class="metric-card">
-                            <span class="metric-value" id="avgConf">0%</span>
-                            <span class="metric-label">Avg Confidence</span>
-                        </div>
-                    </div>
+                    <!-- Review Validation Controls -->
+                    <div class="review-controls-panel">
+                        <h3>Validate Prediction</h3>
+                        <p id="reviewFilename" class="filename-display">Select an image...</p>
 
-                    <button class="btn-reset" id="resetBtn">
-                        <i class="fa-solid fa-rotate-right"></i> Analyze Another
-                    </button>
+                        <div class="actions">
+                            <button id="btnVerify" class="btn-success">
+                                <i class="fa-solid fa-check"></i> Correct
+                            </button>
+
+                            <button id="btnWrong" class="btn-danger">
+                                <i class="fa-solid fa-xmark"></i> Wrong
+                            </button>
+                        </div>
+
+                        <!-- Correction UI (Hidden by default) -->
+                        <div id="correctionPanel" class="correction-panel hidden">
+                            <label>Select Correct Label:</label>
+                            <select id="correctLabelSelect">
+                                <option value="chair">Chair</option>
+                                <option value="box">Box</option>
+                                <option value="document">Document</option>
+                                <option value="house">House</option>
+                                <option value="none">None / Background</option>
+                            </select>
+                            <button id="btnSubmitCorrection" class="btn-primary">
+                                <i class="fa-solid fa-paper-plane"></i> Save Fix
+                            </button>
+                        </div>
+
+                        <button id="btnNextImage" class="btn-secondary">
+                            Skip / Next Image <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
 
