@@ -1,8 +1,8 @@
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
 const resultsArea = document.getElementById('resultsArea');
-const canvas = document.getElementById('detectionCanvas');
-const ctx = canvas.getContext('2d');
+const detectionCanvas = document.getElementById('detectionCanvas');
+const ctx = detectionCanvas.getContext('2d');
 const loader = document.getElementById('loader');
 const resetBtn = document.getElementById('resetBtn');
 const statusValue = document.getElementById('statusValue');
@@ -35,7 +35,7 @@ resetBtn.addEventListener('click', () => {
     resultsArea.classList.add('hidden');
     dropzone.parentElement.querySelector('.analysis-controls').classList.remove('hidden'); // Show controls again
     dropzone.classList.remove('hidden');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height);
     fileInput.value = '';
     selectedFile = null;
 
@@ -91,16 +91,16 @@ async function uploadImage(file) {
 
     sourceImage.onload = async () => {
         // Prepare Canvas
-        canvas.width = sourceImage.naturalWidth;
-        canvas.height = sourceImage.naturalHeight;
-        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear for new drawing (overlay mode)
+        detectionCanvas.width = sourceImage.naturalWidth;
+        detectionCanvas.height = sourceImage.naturalHeight;
+        ctx.clearRect(0, 0, detectionCanvas.width, detectionCanvas.height); // Clear for new drawing (overlay mode)
 
         // Resize if too big (Client-side optimization)
         let processedFile = file;
-        // Optimization: Resize to 800px if larger. 
-        // This speeds up upload significantly while maintaining detection accuracy.
-        if (file.size > 1024 * 1024 || sourceImage.naturalWidth > 800) {
-            processedFile = await resizeImage(file, 800);
+        // Optimization: Resize to 640px (YOLO Native). 
+        // This is the fastest possible setting (matching model input) without losing accuracy.
+        if (file.size > 1024 * 1024 || sourceImage.naturalWidth > 640) {
+            processedFile = await resizeImage(file, 640);
         }
 
         const formData = new FormData();
@@ -160,7 +160,7 @@ function resizeImage(file, maxWidth) {
                         type: file.type,
                         lastModified: Date.now()
                     }));
-                }, file.type, 0.8); // 0.8 Quality
+                }, file.type, 0.7); // 0.7 Speed Quality
             };
             img.src = e.target.result;
         };
@@ -171,8 +171,8 @@ function resizeImage(file, maxWidth) {
 function drawDetections(data) {
     loader.classList.add('hidden');
     const detections = data.detections;
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
+    const imgWidth = detectionCanvas.width;
+    const imgHeight = detectionCanvas.height;
 
     // Dynamic Scale Factor:
     // Scale elements relative to a reference width (e.g., 1000px).
