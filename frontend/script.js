@@ -97,8 +97,10 @@ async function uploadImage(file) {
 
         // Resize if too big (Client-side optimization)
         let processedFile = file;
-        if (file.size > 1024 * 1024 || sourceImage.naturalWidth > 1024) {
-            processedFile = await resizeImage(file, 1024);
+        // Optimization: Resize to 800px if larger. 
+        // This speeds up upload significantly while maintaining detection accuracy.
+        if (file.size > 1024 * 1024 || sourceImage.naturalWidth > 800) {
+            processedFile = await resizeImage(file, 800);
         }
 
         const formData = new FormData();
@@ -158,7 +160,7 @@ function resizeImage(file, maxWidth) {
                         type: file.type,
                         lastModified: Date.now()
                     }));
-                }, file.type, 0.9);
+                }, file.type, 0.8); // 0.8 Quality
             };
             img.src = e.target.result;
         };
