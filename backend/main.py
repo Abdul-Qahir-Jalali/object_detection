@@ -106,7 +106,11 @@ def save_to_data_lake(image_bytes: bytes, filename: str, detections: list):
             
             print(f"Logged data to {dataset_repo}")
         except Exception as e:
-            print(f"Data Lake Upload failed: {e}")
+            print(f"Data Lake Upload failed details: {str(e)}")
+            import traceback
+            traceback.print_exc()
+    else:
+        print("Data Lake skipped: HF_TOKEN not found in env.")
 
 # --- Startup ---
 @app.on_event("startup")
