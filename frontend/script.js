@@ -233,6 +233,8 @@ const navReview = document.getElementById('nav-review');
 const dashboardView = document.getElementById('dashboard-view');
 const reviewView = document.getElementById('review-view');
 const reviewImage = document.getElementById('reviewImage');
+const reviewCanvas = document.getElementById('reviewCanvas');
+const reviewCtx = reviewCanvas.getContext('2d');
 const reviewFilename = document.getElementById('reviewFilename');
 const btnVerify = document.getElementById('btnVerify');
 const btnWrong = document.getElementById('btnWrong');
@@ -294,6 +296,7 @@ function showReviewImage() {
     if (currentReviewIndex >= reviewQueue.length) {
         reviewFilename.textContent = "All loaded images reviewed!";
         reviewImage.src = "";
+        reviewCtx.clearRect(0, 0, reviewCanvas.width, reviewCanvas.height);
         btnVerify.disabled = true;
         btnWrong.disabled = true;
         return;
@@ -302,7 +305,20 @@ function showReviewImage() {
     const path = reviewQueue[currentReviewIndex];
     reviewFilename.textContent = path.split('/').pop(); // Show just filename
 
+    // Reset Canvas
+    reviewCtx.clearRect(0, 0, reviewCanvas.width, reviewCanvas.height);
+
     // Use Proxy Endpoint to fetch secure image
+    reviewImage.onload = async () => {
+        // Set canvas to match image
+        reviewCanvas.width = reviewImage.naturalWidth;
+        reviewCanvas.height = reviewImage.naturalHeight;
+
+        // Fetch and Draw Predictions
+        await loadAndDrawPredictions(path);
+    };
+
+    // Trigger load
     reviewImage.src = `/proxy-image?path=${encodeURIComponent(path)}`;
 
     // Reset UI
@@ -310,6 +326,65 @@ function showReviewImage() {
     btnVerify.disabled = false;
     btnWrong.disabled = false;
 }
+
+async function loadAndDrawPredictions(imagePath) {
+    try {
+        const response = await fetch(`/get-prediction-data?path=${encodeURIComponent(imagePath)}`);
+        if (!response.ok) return; // No predictions found
+
+        const data = await response.json();
+        if (data && data.detections) {
+            drawReviewDetections(data.detections);
+        }
+    } catch (e) {
+        console.error("Could not load prediction overlay", e);
+    }
+}
+
+function drawReviewDetections(detections) {
+    const imgWidth = reviewCanvas.width;
+    const imgHeight = reviewCanvas.height;
+
+    // Scale for readability
+    const scale = Math.max(1, imgWidth / 1000);
+
+    detections.forEach(det => {
+        const [x1, y1, x2, y2] = det.box;
+        const boxX = x1 * imgWidth;
+        const boxY = y1 * imgHeight;
+        const boxW = (x2 - x1) * imgWidth;
+        const boxH = (y2 - y1) * imgHeight;
+
+        // Use a distinct color for Review to differentiate
+        const color = '#3b82f6'; // Blue
+
+        const lineWidth = 6 * scale;
+        const fontSize = Math.round(24 * scale);
+        const padding = 8 * scale;
+
+        // Draw Box
+        reviewCtx.strokeStyle = color;
+        reviewCtx.lineWidth = lineWidth;
+        reviewCtx.strokeRect(boxX, boxY, boxW, boxH);
+
+        // Draw Label
+        reviewCtx.fillStyle = color;
+        const text = `${det.class} ${Math.round(det.confidence * 100)}%`;
+        reviewCtx.font = `bold ${fontSize}px "Inter", sans-serif`;
+        const textMetrics = reviewCtx.measureText(text);
+        const textWidth = textMetrics.width + (padding * 2);
+        const textHeight = fontSize + (padding * 2);
+
+        let labelY = boxY - textHeight;
+        if (labelY < 0) labelY = boxY;
+
+        reviewCtx.fillRect(boxX, labelY, textWidth, textHeight);
+        reviewCtx.fillStyle = '#fff';
+        reviewCtx.textBaseline = 'top';
+        reviewCtx.fillText(text, boxX + padding, labelY + padding);
+    });
+}
+
 
 // Actions
 btnVerify.addEventListener('click', async () => {
@@ -348,12 +423,16 @@ async function submitReview(decision, label = null) {
         });
 
         const result = await response.json();
-        if (result.status === 'success') {
+
+        // Handle Success or Error
+        if (response.ok && result.status === 'success') {
             // Move to next
             currentReviewIndex++;
             showReviewImage();
         } else {
-            alert('Error saving review: ' + result.message);
+            // Extract error message safely
+            const msg = result.message || (result.detail ? JSON.stringify(result.detail) : "Unknown Error");
+            alert('Error saving review: ' + msg);
             btnVerify.disabled = false;
         }
 
