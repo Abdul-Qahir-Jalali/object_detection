@@ -197,6 +197,15 @@ header p {
     transition: transform 0.3s;
 }
 
+/* Preview Image */
+.preview-image {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 1rem;
+    object-fit: contain;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
 /* Analysis Controls */
 .analysis-controls {
     width: 100%;

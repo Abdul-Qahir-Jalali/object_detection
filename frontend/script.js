@@ -42,6 +42,11 @@ resetBtn.addEventListener('click', () => {
     // Reset UI state
     analyzeBtn.disabled = true;
     fileNameDisplay.classList.add('hidden');
+
+    // Reset Preview
+    document.getElementById('previewImage').classList.add('hidden');
+    dropzone.querySelector('.upload-content').classList.remove('hidden');
+    dropzone.style.padding = '5rem 2rem'; // Restore original padding
 });
 
 
