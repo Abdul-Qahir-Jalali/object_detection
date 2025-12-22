@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'backend/**'
+      - 'frontend/**'
 
 jobs:
   sync-to-hub:
@@ -31,7 +32,11 @@ jobs:
           # (We ignore errors if files don't exist in source to avoid failing on empty updates, but mainly we want to overwrite)
           cp -r backend/* SPACE_REPO/
           
+          # Create static dir and copy frontend files
+          mkdir -p SPACE_REPO/static
+          cp -r frontend/* SPACE_REPO/static/
+          
           cd SPACE_REPO
           git add .
-          git commit -m "Sync backend from GitHub: ${{ github.sha }}" || echo "No changes to commit"
+          git commit -m "Sync backend and frontend from GitHub: ${{ github.sha }}" || echo "No changes to commit"
           git push https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_ID main

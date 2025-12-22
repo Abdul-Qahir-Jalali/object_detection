@@ -4,6 +4,7 @@ import uuid
 import datetime
 import json
 from fastapi import FastAPI, File, UploadFile, BackgroundTasks
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
@@ -93,9 +94,11 @@ async def startup_event():
         wandb.login(key=os.getenv("WANDB_API_KEY"))
 
 # --- Endpoints ---
-@app.get("/")
+@app.get("/health")
 def health_check():
     return {"status": "running", "model": HP_REPO_ID}
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
