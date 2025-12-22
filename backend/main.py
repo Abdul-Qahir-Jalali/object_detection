@@ -126,11 +126,13 @@ async def startup_event():
         wandb.login(key=os.getenv("WANDB_API_KEY"))
 
 # --- Review System Models ---
+from typing import Optional
+
 class ReviewData(BaseModel):
     filename: str
     decision: str  # 'verified' or 'correction'
-    label: str = None # 'chair', 'box', etc. (Only if decision='correction')
-    box: list = None # [x1, y1, x2, y2] (Optional, if correcting box too)
+    label: Optional[str] = None # 'chair', 'box', etc. (Only if decision='correction')
+    box: Optional[list] = None # [x1, y1, x2, y2] (Optional, if correcting box too)
 
 # --- Review System Endpoints ---
 @app.get("/list-unverified")
