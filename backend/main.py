@@ -187,6 +187,35 @@ def proxy_image(path: str):
     except Exception as e:
         return Response(content=str(e), status_code=500)
 
+@app.get("/get-prediction-data")
+def get_prediction_data(path: str):
+    """Fetch stored prediction JSON for a specific image path."""
+    token = os.getenv("HF_TOKEN")
+    dataset_repo = "qahir00/yolo-data"
+    
+    if not token:
+        return {"error": "HF_TOKEN missing"}
+        
+    try:
+        # Convert image path to prediction path
+        # from: images/2025-01-01/abc.jpg
+        # to:   predictions/2025-01-01/abc.json
+        if not path.startswith("images/"):
+             return {"error": "Invalid path format"}
+             
+        pred_path = path.replace("images/", "predictions/").replace(".jpg", ".json").replace(".png", ".json").replace(".webp", ".json")
+        
+        url = hf_hub_url(repo_id=dataset_repo, filename=pred_path, repo_type="dataset")
+        resp = requests.get(url, headers={"Authorization": f"Bearer {token}"})
+        
+        if resp.status_code == 200:
+            return resp.json() # Direct JSON return
+        else:
+            return {"error": "Prediction not found", "details": f"Upstream {resp.status_code}"}
+            
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/submit-review")
 def submit_review(data: ReviewData):
     """Move data to 'verified' or 'corrected' folder based on user review."""
