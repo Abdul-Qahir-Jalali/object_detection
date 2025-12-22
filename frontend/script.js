@@ -73,9 +73,6 @@ function handleFiles(files) {
         // Enable Analyze Button
         analyzeBtn.disabled = false;
 
-        // Hide text filename (since we show preview now)
-        fileNameDisplay.classList.add('hidden');
-
     } else {
         alert('Please upload an image file (JPG, PNG, WEBP).');
     }
