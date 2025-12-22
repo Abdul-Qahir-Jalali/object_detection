@@ -3,13 +3,15 @@ import io
 import uuid
 import datetime
 import json
+import requests
 from fastapi import FastAPI, File, UploadFile, BackgroundTasks
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from PIL import Image
 from ultralytics import YOLO
-from huggingface_hub import hf_hub_download, HfApi, login
+from huggingface_hub import hf_hub_download, HfApi, login, hf_hub_url
 import wandb
 import numpy as np
 import cv2
@@ -122,6 +124,140 @@ async def startup_event():
     
     if os.getenv("WANDB_API_KEY"):
         wandb.login(key=os.getenv("WANDB_API_KEY"))
+
+# --- Review System Models ---
+class ReviewData(BaseModel):
+    filename: str
+    decision: str  # 'verified' or 'correction'
+    label: str = None # 'chair', 'box', etc. (Only if decision='correction')
+    box: list = None # [x1, y1, x2, y2] (Optional, if correcting box too)
+
+# --- Review System Endpoints ---
+@app.get("/list-unverified")
+def list_unverified(limit: int = 50):
+    """List most recent images from the dataset that need review."""
+    token = os.getenv("HF_TOKEN")
+    dataset_repo = "qahir00/yolo-data"
+    
+    if not token:
+        return {"error": "HF_TOKEN missing"}
+    
+    try:
+        api = HfApi(token=token)
+        # List all files
+        files = api.list_repo_files(dataset_repo, repo_type="dataset")
+        
+        # Filter for images in 'images/' folder, excluding 'verified' or 'corrected'
+        image_files = [
+            f for f in files 
+            if f.startswith("images/") and f.endswith((".jpg", ".png", ".webp"))
+            and "verified" not in f and "corrected" not in f
+        ]
+        
+        # Sort by date (descending) - inferred from path images/YYYY-MM-DD/...
+        image_files.sort(reverse=True)
+        
+        # return newest 'limit'
+        return {"images": image_files[:limit]}
+        
+    except Exception as e:
+        return {"error": str(e)}
+
+@app.get("/proxy-image")
+def proxy_image(path: str):
+    """Securely proxy image from private HF dataset to frontend."""
+    token = os.getenv("HF_TOKEN")
+    dataset_repo = "qahir00/yolo-data"
+    
+    if not token:
+        return Response(content="HF_TOKEN missing", status_code=500)
+        
+    try:
+        # Construct URL
+        url = hf_hub_url(repo_id=dataset_repo, filename=path, repo_type="dataset")
+        
+        # Fetch with Auth
+        resp = requests.get(url, headers={"Authorization": f"Bearer {token}"})
+        
+        if resp.status_code == 200:
+            return Response(content=resp.content, media_type="image/jpeg")
+        else:
+            return Response(content=f"Error upstream: {resp.status_code}", status_code=resp.status_code)
+            
+    except Exception as e:
+        return Response(content=str(e), status_code=500)
+
+@app.post("/submit-review")
+def submit_review(data: ReviewData):
+    """Move data to 'verified' or 'corrected' folder based on user review."""
+    token = os.getenv("HF_TOKEN")
+    dataset_repo = "qahir00/yolo-data"
+    
+    if not token:
+        return {"status": "error", "message": "HF_TOKEN missing"}
+        
+    try:
+        api = HfApi(token=token)
+        date_str = datetime.datetime.now().strftime('%Y-%m-%d')
+        
+        # Original Image Path (from frontend) e.g. "images/2025-01-01/abc.jpg"
+        original_path = data.filename
+        filename_only = original_path.split('/')[-1]
+        
+        # 1. Fetch Original Image Content (Memory)
+        # (We basically download it to re-upload it to new location)
+        url = hf_hub_url(repo_id=dataset_repo, filename=original_path, repo_type="dataset")
+        resp = requests.get(url, headers={"Authorization": f"Bearer {token}"})
+        if resp.status_code != 200:
+             return {"status": "error", "message": "Could not fetch original image"}
+        image_bytes = resp.content
+        
+        # 2. Determine Target Path
+        if data.decision == 'verified':
+            # Save to: verified/images/DATE/filename
+            target_image_path = f"verified/images/{date_str}/{filename_only}"
+            target_label_path = f"verified/labels/{date_str}/{filename_only.replace('.jpg','.json')}"
+            
+            # For verified, we essentially keep same data, maybe verify metadata
+            label_content = {"status": "verified", "original_path": original_path, "timestamp": date_str}
+            
+        elif data.decision == 'correction':
+            # Save to: corrected/images/DATE/filename
+            target_image_path = f"corrected/images/{date_str}/{filename_only}"
+            target_label_path = f"corrected/labels/{date_str}/{filename_only.replace('.jpg','.json')}"
+            
+            # Save the CORRECTION
+            label_content = {
+                "status": "corrected", 
+                "label": data.label,
+                "original_path": original_path,
+                "timestamp": date_str
+            }
+        
+        # 3. Upload to New Location
+        api.upload_file(
+            path_or_fileobj=io.BytesIO(image_bytes),
+            path_in_repo=target_image_path,
+            repo_id=dataset_repo,
+            repo_type="dataset"
+        )
+        
+        api.upload_file(
+            path_or_fileobj=io.BytesIO(json.dumps(label_content, indent=2).encode('utf-8')),
+            path_in_repo=target_label_path,
+            repo_id=dataset_repo,
+            repo_type="dataset"
+        )
+        
+        # 4. Optional: Delete original? 
+        # For safety, let's NOT delete original yet, just copy. 
+        # User can delete manually or we add a cleanup script later.
+        
+        return {"status": "success", "message": f"Moved to {target_image_path}"}
+        
+    except Exception as e:
+        import traceback
+        return {"status": "error", "message": str(e), "traceback": traceback.format_exc()}
 
 # --- Endpoints ---
 @app.get("/health")
