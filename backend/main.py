@@ -259,6 +259,10 @@ def submit_review(data: ReviewData):
             target_label_path = f"corrected/labels/{date_str}/{filename_only.replace('.jpg','.json')}"
             
             # Save the CORRECTION
+            label_content = {
+                "status": "corrected", 
+                "label": data.label,
+                "original_path": original_path,
                 "timestamp": date_str
             }
             
