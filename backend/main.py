@@ -152,14 +152,27 @@ def list_unverified(limit: int = 50):
     try:
         api = HfApi(token=token)
         # List all files
-        files = api.list_repo_files(dataset_repo, repo_type="dataset")
+        try:
+             files = api.list_repo_files(dataset_repo, repo_type="dataset")
+        except Exception as e:
+             # Retry once if network blip
+             files = api.list_repo_files(dataset_repo, repo_type="dataset")
         
-        # Filter for images in 'images/' folder, excluding 'verified' or 'corrected'
-        image_files = [
-            f for f in files 
-            if f.startswith("images/") and f.endswith((".jpg", ".png", ".webp"))
-            and "verified" not in f and "corrected" not in f
-        ]
+        # Robust Filtering:
+        # Create a set of filenames (basenames) that are already verified or corrected
+        # Structure: verified/images/DATE/filename.jpg
+        reviewed_basenames = set()
+        for f in files:
+            if f.startswith("verified/images/") or f.startswith("corrected/images/"):
+                reviewed_basenames.add(f.split("/")[-1])
+        
+        # Filter: In 'images/' folder AND basename not in reviewed_basenames
+        image_files = []
+        for f in files:
+            if f.startswith("images/") and f.endswith((".jpg", ".png", ".webp")):
+                basename = f.split("/")[-1]
+                if basename not in reviewed_basenames:
+                    image_files.append(f)
         
         # Sort by date (descending) - inferred from path images/YYYY-MM-DD/...
         image_files.sort(reverse=True)
@@ -316,10 +329,28 @@ def process_review_task(data: ReviewData, token: str):
             repo_id=dataset_repo, repo_type="dataset"
         )
         
+        # 5. Clean Inbox (Delete Original)
+        # This solves the "Repeating Images" issue by removing them from the queue
+        # and keeps the dataset clean.
+        try:
+            print(f"Deleting original {original_path} from inbox...")
+            api.delete_file(path_in_repo=original_path, repo_id=dataset_repo, repo_type="dataset")
+            
+            # Also delete the prediction JSON
+            pred_path = original_path.replace("images/", "predictions/").replace(".jpg", ".json").replace(".png", ".json").replace(".webp", ".json")
+            try:
+                api.delete_file(path_in_repo=pred_path, repo_id=dataset_repo, repo_type="dataset")
+            except:
+                pass # Prediction might not exist or already deleted
+        except Exception as e:
+            print(f"Warning: Failed to delete original file: {e}")
+
         # Check Trigger
         try:
-            all_verified = api.list_repo_files(dataset_repo, repo_type="dataset")
-            verified_imgs = [f for f in all_verified if f.startswith("verified/images/") and f.endswith((".jpg", ".png"))]
+            # We list again to count. 
+            # Optimization potential: We can rely on a simpler counter if needed, but listing is safest.
+            all_files = api.list_repo_files(dataset_repo, repo_type="dataset")
+            verified_imgs = [f for f in all_files if f.startswith("verified/images/") and f.endswith((".jpg", ".png"))]
             count = len(verified_imgs)
             print(f"Verified count: {count}")
             
