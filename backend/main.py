@@ -383,21 +383,32 @@ def submit_review(data: ReviewData, background_tasks: BackgroundTasks):
 def health_check():
     return {"status": "running"}
 
-@app.get("/debug-upload")
-def debug_upload():
-    """Diagnostic endpoint to test HF Dataset upload permissions."""
+@app.post("/debug-trigger")
+def debug_trigger(background_tasks: BackgroundTasks):
+    """Manually force a check of the verified count and trigger training if >= 10."""
     token = os.getenv("HF_TOKEN")
-    if not token:
-        return {"status": "error", "message": "HF_TOKEN env var is MISSING"}
+    dataset_repo = "qahir00/yolo-data"
     
-    try:
-        api = HfApi(token=token)
-        user = api.whoami()
-        username = user['name']
-        
-        # Test Upload
-        repo_id = "qahir00/yolo-data"
-        debug_filename = f"debug_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    def manual_check():
+        try:
+            print("Manual trigger check initiated...")
+            api = HfApi(token=token)
+            all_files = api.list_repo_files(dataset_repo, repo_type="dataset")
+            verified_imgs = [f for f in all_files if f.startswith("verified/images/") and f.endswith((".jpg", ".png"))]
+            count = len(verified_imgs)
+            print(f"Manual Verified count: {count}")
+            
+            if count >= 10:
+                print("TRIGGERING RETRAINING PIPELINE via Kaggle (Manual Force)...")
+                res = kaggle_trigger.push_training_kernel(dataset_repo, HP_REPO_ID)
+                print(f"Trigger result: {res}")
+            else:
+                print(f"Count {count} is less than 10. No trigger.")
+        except Exception as e:
+            print(f"Manual trigger failed: {e}")
+
+    background_tasks.add_task(manual_check)
+    return {"status": "success", "message": "Manual check queued. Check logs."}
         debug_content = f"Debug upload test at {datetime.datetime.now()}\nUser: {username}"
         
         api.upload_file(
