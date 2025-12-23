@@ -8,3 +8,5 @@ wandb
 Pillow
 numpy
 requests
+
+kaggle

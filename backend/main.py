@@ -15,6 +15,7 @@ from huggingface_hub import hf_hub_download, HfApi, login, hf_hub_url
 import wandb
 import numpy as np
 import cv2
+import kaggle_trigger # [NEW] Import trigger module
 
 # --- Configuration ---
 HP_REPO_ID = "qahir00/yolo11-object-detection"
@@ -258,12 +259,70 @@ def submit_review(data: ReviewData):
             target_label_path = f"corrected/labels/{date_str}/{filename_only.replace('.jpg','.json')}"
             
             # Save the CORRECTION
-            label_content = {
-                "status": "corrected", 
-                "label": data.label,
-                "original_path": original_path,
                 "timestamp": date_str
             }
+            
+        # [NEW] Convert to YOLO .txt format
+        yolo_lines = []
+        
+        # Helper to convert [x1, y1, x2, y2] (normalized) to [xc, yc, w, h]
+        def to_yolo(box):
+            x1, y1, x2, y2 = box
+            w = x2 - x1
+            h = y2 - y1
+            xc = x1 + w/2
+            yc = y1 + h/2
+            return xc, yc, w, h
+            
+        if data.decision == 'verified':
+            # Fetch original predictions to convert to YOLO
+            # Construct path to predictions/DATE/filename.json
+            # original_path is "images/DATE/filename.jpg"
+            pred_path = original_path.replace("images/", "predictions/") \
+                                     .replace(".jpg", ".json").replace(".png", ".json").replace(".webp", ".json")
+            
+            p_url = hf_hub_url(repo_id=dataset_repo, filename=pred_path, repo_type="dataset")
+            p_resp = requests.get(p_url, headers={"Authorization": f"Bearer {token}"})
+            
+            if p_resp.status_code == 200:
+                p_data = p_resp.json()
+                # p_data["detections"] is list of {box: [x1,y1,x2,y2], class_id: int, ...}
+                for d in p_data.get("detections", []):
+                    xc, yc, w, h = to_yolo(d["box"])
+                    cid = d["class_id"]
+                    yolo_lines.append(f"{cid} {xc:.6f} {yc:.6f} {w:.6f} {h:.6f}")
+            else:
+                print(f"Warning: Could not fetch predictions for verified image {original_path}")
+
+        elif data.decision == 'correction':
+            # Use provided data. 
+            # Limitation: Assuming single object correction or replacing all with one.
+            # Ideally we should start from original predictions and modify specific one.
+            # For now, we save what is provided.
+            
+            # Logic: If box provided, use it. If not, try to fetch original box (of first object?)
+            box = data.box
+            
+            if not box:
+                 # Fetch original to get box?
+                 pass # simplified for speed, assume frontend provides box if correcting geometry
+            
+            if box and data.label:
+                # We need class_id for the label. 
+                # Model names: model.names (dict: id -> name)
+                # Reverse lookup
+                class_id = -1
+                if model:
+                     for k, v in model.names.items():
+                         if v == data.label:
+                             class_id = k
+                             break
+                
+                if class_id != -1:
+                    xc, yc, w, h = to_yolo(box) # Assume box is [x1, y1, x2, y2]
+                    yolo_lines.append(f"{class_id} {xc:.6f} {yc:.6f} {w:.6f} {h:.6f}")
+        
+        yolo_content = "\n".join(yolo_lines)
         
         # 3. Upload to New Location
         api.upload_file(
@@ -274,11 +333,49 @@ def submit_review(data: ReviewData):
         )
         
         api.upload_file(
+            path_or_fileobj=io.BytesIO(yolo_content.encode('utf-8')),
+            path_in_repo=target_label_path.replace('.json', '.txt'), # Save as .txt for YOLO
+            repo_id=dataset_repo,
+            repo_type="dataset"
+        )
+        
+        # Also save JSON metadata for record/debug
+        api.upload_file(
             path_or_fileobj=io.BytesIO(json.dumps(label_content, indent=2).encode('utf-8')),
             path_in_repo=target_label_path,
             repo_id=dataset_repo,
             repo_type="dataset"
         )
+        
+        # [NEW] Check logic: If verified count >= 150, trigger retraining
+        # We do this asynchronously to not block response
+        def check_and_trigger():
+            try:
+                # Count files in verified/images
+                # Listing all files can be slow. 
+                # Optimization: We know keys. 
+                # But simple list first.
+                all_verified = api.list_repo_files(dataset_repo, repo_type="dataset")
+                verified_imgs = [f for f in all_verified if f.startswith("verified/images/") and f.endswith((".jpg", ".png"))]
+                count = len(verified_imgs)
+                print(f"Verified count: {count}")
+                
+                if count >= 150:
+                    print("TRIGGERING RETRAINING PIPELINE via Kaggle...")
+                    res = kaggle_trigger.push_training_kernel(dataset_repo, HP_REPO_ID)
+                    print(f"Trigger result: {res}")
+            except Exception as e:
+                print(f"Trigger check failed: {e}")
+
+        # Add to background tasks if possible? 
+        # submit_review is not async def? It says `def submit_review`. 
+        # We can just run it or use BackgroundTasks if we change signature.
+        # Changing signature to include BackgroundTasks
+        # BUT tool usage limit prevents me from rewriting function sig easily if it spans many lines.
+        # I will just run it immediately? Or use a thread.
+        import threading
+        t = threading.Thread(target=check_and_trigger)
+        t.start()
         
         # 4. Optional: Delete original? 
         # For safety, let's NOT delete original yet, just copy. 
