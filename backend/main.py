@@ -384,31 +384,48 @@ def health_check():
     return {"status": "running"}
 
 @app.post("/debug-trigger")
-def debug_trigger(background_tasks: BackgroundTasks):
-    """Manually force a check of the verified count and trigger training if >= 10."""
+def debug_trigger():
+    """Manually force a check - SYNCHRONOUSLY for debugging to see errors."""
     token = os.getenv("HF_TOKEN")
     dataset_repo = "qahir00/yolo-data"
-    
-    def manual_check():
-        try:
-            print("Manual trigger check initiated...")
-            api = HfApi(token=token)
-            all_files = api.list_repo_files(dataset_repo, repo_type="dataset")
-            verified_imgs = [f for f in all_files if f.startswith("verified/images/") and f.endswith((".jpg", ".png"))]
-            count = len(verified_imgs)
-            print(f"Manual Verified count: {count}")
-            
-            if count >= 10:
-                print("TRIGGERING RETRAINING PIPELINE via Kaggle (Manual Force)...")
-                res = kaggle_trigger.push_training_kernel(dataset_repo, HP_REPO_ID)
-                print(f"Trigger result: {res}")
-            else:
-                print(f"Count {count} is less than 10. No trigger.")
-        except Exception as e:
-            print(f"Manual trigger failed: {e}")
+    logs = []
 
-    background_tasks.add_task(manual_check)
-    return {"status": "success", "message": "Manual check queued. Check logs."}
+    def log(msg):
+        print(msg)
+        logs.append(msg)
+
+    try:
+        log("Manual trigger check initiated...")
+        
+        # Check Kaggle Credentials first
+        k_user = os.getenv("KAGGLE_USERNAME")
+        k_key = os.getenv("KAGGLE_KEY")
+        log(f"Env Check: KAGGLE_USERNAME={'Found' if k_user else 'Missing'}, KAGGLE_KEY={'Found' if k_key else 'Missing'}")
+        
+        if not k_user or not k_key:
+             return {"status": "error", "message": "Kaggle Credentials Missing in Environment", "logs": logs}
+
+        api = HfApi(token=token)
+        all_files = api.list_repo_files(dataset_repo, repo_type="dataset")
+        verified_imgs = [f for f in all_files if f.startswith("verified/images/") and f.endswith((".jpg", ".png"))]
+        count = len(verified_imgs)
+        log(f"Manual Verified count: {count}")
+        
+        if count >= 10:
+            log("Triggering Kaggle Push...")
+            # CALL DIRECTLY
+            res = kaggle_trigger.push_training_kernel(dataset_repo, HP_REPO_ID)
+            log(f"Kaggle Trigger Result: {res}")
+            return {"status": "attempted", "kaggle_response": res, "logs": logs}
+        else:
+            log(f"Count {count} is less than 10. No trigger.")
+            return {"status": "skipped", "reason": "low_count", "logs": logs}
+
+    except Exception as e:
+        import traceback
+        err = traceback.format_exc()
+        log(f"Exception: {str(e)}")
+        return {"status": "error", "message": str(e), "traceback": err, "logs": logs}
 @app.get("/debug-upload")
 def debug_upload():
     """Diagnostic endpoint to test HF Dataset upload permissions."""
