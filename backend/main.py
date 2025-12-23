@@ -1,4 +1,8 @@
-import os # Trigger deployment
+import os
+from dotenv import load_dotenv
+load_dotenv() # Load env vars BEFORE importing modules that might look for them
+
+# Trigger deployment
 import io
 import uuid
 import datetime
