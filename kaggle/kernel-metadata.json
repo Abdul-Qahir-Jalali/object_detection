@@ -1,5 +1,5 @@
 {
-    "id": "kaggul/yolo11-automated-retraining",
+    "id": "abdulqahir12/yolo11-automated-retraining",
     "title": "YOLO11 Automated Retraining",
     "code_file": "retrain_script.py",
     "language": "python",
