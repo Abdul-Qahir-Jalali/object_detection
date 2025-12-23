@@ -360,7 +360,7 @@ def submit_review(data: ReviewData):
                 count = len(verified_imgs)
                 print(f"Verified count: {count}")
                 
-                if count >= 150:
+                if count >= 10:
                     print("TRIGGERING RETRAINING PIPELINE via Kaggle...")
                     res = kaggle_trigger.push_training_kernel(dataset_repo, HP_REPO_ID)
                     print(f"Trigger result: {res}")
