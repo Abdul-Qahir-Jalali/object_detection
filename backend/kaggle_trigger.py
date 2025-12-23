@@ -34,7 +34,9 @@ def push_training_kernel(dataset_repo, model_repo):
         # We will assume the user has set HF_TOKEN in Kaggle Secrets as requested.
         
         # Path to kernel directory
-        kernel_dir = os.path.join(os.path.dirname(__file__), "../kaggle")
+        # Path to kernel directory
+        # Since we moved kaggle folder INSIDE backend for Docker compatibility:
+        kernel_dir = os.path.join(os.path.dirname(__file__), "kaggle")
         
         # Push the kernel
         # This creates a new version and runs it.
