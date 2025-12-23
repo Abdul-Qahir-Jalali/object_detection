@@ -464,6 +464,65 @@ def debug_upload():
 
 
 
+@app.get("/proxy-image")
+def proxy_image(path: str):
+    """Proxy image from HF Dataset to frontend to avoid CORS/Auth issues."""
+    token = os.getenv("HF_TOKEN")
+    dataset_repo = "qahir00/yolo-data"
+    
+    if not token:
+        raise HTTPException(status_code=500, detail="HF_TOKEN missing")
+
+    try:
+        # Construct URL for the file in the dataset
+        # We can't use hf_hub_url easily for private datasets without auth headers
+        # best way: download to memory or stream via requests with auth
+        
+        url = f"https://huggingface.co/datasets/{dataset_repo}/resolve/main/{path}"
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        # Stream response
+        from fastapi.responses import StreamingResponse
+        import requests
+        
+        r = requests.get(url, headers=headers, stream=True)
+        if r.status_code != 200:
+            return JSONResponse(status_code=404, content={"error": "Image not found"})
+            
+        return StreamingResponse(r.iter_content(chunk_size=8192), media_type="image/jpeg")
+        
+    except Exception as e:
+        print(f"Proxy Error: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/get-prediction-data")
+def get_prediction_data(path: str):
+    """Fetch corresponding JSON prediction for an image."""
+    token = os.getenv("HF_TOKEN")
+    dataset_repo = "qahir00/yolo-data"
+    
+    if not token:
+        return {"error": "Token missing"}
+        
+    try:
+        # Convert image path to prediction path
+        # images/DATE/file.jpg -> predictions/DATE/file.json
+        pred_path = path.replace("images/", "predictions/").replace(".jpg", ".json").replace(".png", ".json").replace(".webp", ".json")
+        
+        url = f"https://huggingface.co/datasets/{dataset_repo}/resolve/main/{pred_path}"
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        import requests
+        r = requests.get(url, headers=headers)
+        
+        if r.status_code == 200:
+            return r.json()
+        else:
+            return {"error": "No prediction found"}
+            
+    except Exception as e:
+        return {"error": str(e)}
+
 @app.post("/predict")
 async def predict(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
     if model is None:
