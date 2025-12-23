@@ -409,6 +409,21 @@ def debug_trigger(background_tasks: BackgroundTasks):
 
     background_tasks.add_task(manual_check)
     return {"status": "success", "message": "Manual check queued. Check logs."}
+@app.get("/debug-upload")
+def debug_upload():
+    """Diagnostic endpoint to test HF Dataset upload permissions."""
+    token = os.getenv("HF_TOKEN")
+    if not token:
+        return {"status": "error", "message": "HF_TOKEN env var is MISSING"}
+    
+    try:
+        api = HfApi(token=token)
+        user = api.whoami()
+        username = user['name']
+        
+        # Test Upload
+        repo_id = "qahir00/yolo-data"
+        debug_filename = f"debug_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
         debug_content = f"Debug upload test at {datetime.datetime.now()}\nUser: {username}"
         
         api.upload_file(
