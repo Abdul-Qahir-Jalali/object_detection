@@ -1,14 +1,14 @@
 import os
 import json
-from kaggle.api.kaggle_api_extended import KaggleApi
+# from kaggle.api.kaggle_api_extended import KaggleApi # Lazy loaded inside functions
 
 def authenticate_kaggle():
     """Authenticates using environment variables."""
-    # Ensure env vars are set (loaded by main.py or system)
     if not os.getenv("KAGGLE_USERNAME") or not os.getenv("KAGGLE_KEY"):
         print("Error: Kaggle credentials not found in environment.")
         return None
     
+    from kaggle.api.kaggle_api_extended import KaggleApi
     api = KaggleApi()
     api.authenticate()
     return api
