@@ -239,8 +239,6 @@ const reviewFilename = document.getElementById('reviewFilename');
 const btnVerify = document.getElementById('btnVerify');
 const btnWrong = document.getElementById('btnWrong');
 const correctionPanel = document.getElementById('correctionPanel');
-const btnSubmitCorrection = document.getElementById('btnSubmitCorrection');
-const btnSubmitCorrection = document.getElementById('btnSubmitCorrection');
 const btnNextImage = document.getElementById('btnNextImage');
 
 // Debug Trigger Logic
