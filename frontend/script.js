@@ -240,7 +240,32 @@ const btnVerify = document.getElementById('btnVerify');
 const btnWrong = document.getElementById('btnWrong');
 const correctionPanel = document.getElementById('correctionPanel');
 const btnSubmitCorrection = document.getElementById('btnSubmitCorrection');
+const btnSubmitCorrection = document.getElementById('btnSubmitCorrection');
 const btnNextImage = document.getElementById('btnNextImage');
+
+// Debug Trigger Logic
+const btnDebugTrigger = document.getElementById('btnDebugTrigger');
+if (btnDebugTrigger) {
+    btnDebugTrigger.addEventListener('click', async () => {
+        if (!confirm("Start Debug Retrain Check? This will check HF for >10 images.")) return;
+
+        try {
+            btnDebugTrigger.textContent = "Checking...";
+            btnDebugTrigger.disabled = true;
+
+            const res = await fetch('/debug-trigger', { method: 'POST' });
+            const data = await res.json();
+
+            alert("Debug Result:\n" + JSON.stringify(data, null, 2));
+            console.log("Debug Trigger Response:", data);
+        } catch (e) {
+            alert("Error triggering debug: " + e.message);
+        } finally {
+            btnDebugTrigger.textContent = "Force Retrain (Debug Check)";
+            btnDebugTrigger.disabled = false;
+        }
+    });
+}
 
 let reviewQueue = [];
 let currentReviewIndex = 0;
