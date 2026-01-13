@@ -893,9 +893,22 @@ button:disabled {
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
-    /* Layout Structure */
+    /* Layout Structure - Critical Fixes for Overflow/Distortion */
+    body {
+        height: auto;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+
+    .app-container {
+        height: auto;
+        overflow: visible;
+    }
+
     .app-body {
         flex-direction: column;
+        height: auto;
+        overflow: visible;
     }
 
     .sidebar {
@@ -903,8 +916,11 @@ button:disabled {
     }
 
     .main-content {
-        padding: 1.5rem 1rem;
-        gap: 2rem;
+        padding: 1rem;
+        gap: 1.5rem;
+        height: auto;
+        overflow: visible;
+        flex: none; /* Do not force flex growing/shrinking in a weird way */
     }
 
     /* Header */
@@ -913,6 +929,7 @@ button:disabled {
         padding: 1rem;
         flex-direction: column;
         gap: 1rem;
+        position: relative; /* Ensure it doesn't float weirdly if fixed */
     }
 
     .header-left, .header-right {
@@ -923,40 +940,48 @@ button:disabled {
     .main-nav {
         width: 100%;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* Smooth scroll on iOS */
     }
     
     .main-nav ul {
         justify-content: center;
         padding-bottom: 5px;
+        width: max-content; /* Ensure items don't squash */
+        margin: 0 auto;
     }
 
     /* Typography */
     header h1 {
-        font-size: 2rem;
+        font-size: 1.75rem; /* Slightly smaller to prevent wrapping issues */
         text-align: center;
+        line-height: 1.2;
     }
 
     header p {
-        font-size: 1rem;
+        font-size: 0.95rem;
         text-align: center;
+        padding: 0 0.5rem;
     }
 
     /* Workspace */
     .workspace {
-        padding: 1.5rem;
+        padding: 1.5rem 1rem;
         width: 100%;
+        height: auto; /* Allow content to dictate height */
     }
 
     .upload-area {
-        padding: 3rem 1.5rem;
+        padding: 2.5rem 1rem;
+        max-width: 100%;
     }
 
     .upload-content .icon {
-        font-size: 3rem;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
     }
 
     .upload-content h3 {
-        font-size: 1.25rem;
+        font-size: 1.2rem;
     }
 
     /* Results Area */
@@ -968,6 +993,7 @@ button:disabled {
 
     .metric-card {
         padding: 1rem;
+        width: 100%;
     }
 
     .metric-value {
@@ -989,5 +1015,30 @@ button:disabled {
     .btn-success, .btn-danger {
         width: 100%;
         justify-content: center;
+    }
+
+    /* Canvas Wrapper Response */
+    .canvas-wrapper {
+        max-width: 100%;
+        height: auto;
+        max-height: 50vh; /* Limit height on mobile so it doesn't take full screen */
+    }
+    
+    #sourceImage, #detectionCanvas {
+        max-width: 100%;
+        height: auto;
+        object-fit: contain;
+    }
+
+    /* Review Hub items */
+    .review-workspace {
+        flex-direction: column;
+        padding: 0;
+    }
+
+    .review-image-area {
+        width: 100%;
+        height: auto;
+        min-height: 250px;
     }
 }
