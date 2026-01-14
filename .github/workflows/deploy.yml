@@ -28,9 +28,10 @@ jobs:
           # Clone the HF Space
           git clone https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_ID SPACE_REPO
           
-          # [NEW] CLEANUP STEP: Remove all existing files in Space (except .git) to remove old junk
+          # [SAFE CLEANUP]: Remove specific files that might cause conflicts, rather than wiping everything
           cd SPACE_REPO
-          find . -maxdepth 1 -not -name '.git' -not -name '.' -exec rm -rf {} +
+          rm -f Dockerfile
+          rm -rf static
           cd ..
           
           # Copy backend files to root of Space
