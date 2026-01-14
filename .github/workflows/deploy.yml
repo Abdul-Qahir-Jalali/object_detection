@@ -28,6 +28,11 @@ jobs:
           # Clone the HF Space
           git clone https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_ID SPACE_REPO
           
+          # [NEW] CLEANUP STEP: Remove all existing files in Space (except .git) to remove old junk
+          cd SPACE_REPO
+          find . -maxdepth 1 -not -name '.git' -not -name '.' -exec rm -rf {} +
+          cd ..
+          
           # Copy backend files to root of Space
           # (We ignore errors if files don't exist in source to avoid failing on empty updates, but mainly we want to overwrite)
           cp -r backend/* SPACE_REPO/
@@ -40,6 +45,6 @@ jobs:
           echo "$(date)" > SPACE_REPO/build_timestamp.txt
           
           cd SPACE_REPO
-          git add .
-          git commit -m "Sync backend and frontend from GitHub: ${{ github.sha }}" || echo "No changes to commit"
+          git add --all # The --all flag ensures deletions are staged
+          git commit -m "Clean sync from GitHub: ${{ github.sha }}" || echo "No changes to commit"
           git push https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_ID main
