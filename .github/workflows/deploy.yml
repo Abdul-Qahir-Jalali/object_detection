@@ -36,6 +36,9 @@ jobs:
           mkdir -p SPACE_REPO/static
           cp -r frontend/* SPACE_REPO/static/
           
+          # Force Docker Build Invalidation (Cache Bust)
+          echo "$(date)" > SPACE_REPO/build_timestamp.txt
+          
           cd SPACE_REPO
           git add .
           git commit -m "Sync backend and frontend from GitHub: ${{ github.sha }}" || echo "No changes to commit"

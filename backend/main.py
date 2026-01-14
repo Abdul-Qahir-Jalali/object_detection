@@ -38,6 +38,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# [NEW] Force No-Cache Middleware for Debugging Mobile
+from fastapi import Request
+@app.middleware("http")
+async def add_no_cache_header(request: Request, call_next):
+    response = await call_next(request)
+    # Apply to static assets to fix mobile caching stubbornness
+    if request.url.path.endswith((".css", ".js", ".html", "/")):
+         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+         response.headers["Pragma"] = "no-cache"
+         response.headers["Expires"] = "0"
+    return response
+
 # Global model variable
 model = None
 
